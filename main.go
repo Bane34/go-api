@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -25,7 +27,44 @@ var tasks = allTasks{
 	},
 }
 
+func createTask(w http.ResponseWriter, r *http.Request) {
+	var newTask task
+	reqBody, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Fprintf(w, "Insert a valid task")
+	}
+
+	json.Unmarshal(reqBody, &newTask)
+
+	newTask.ID = len(tasks) + 1
+	tasks = append(tasks, newTask)
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newTask)
+}
+
+func getTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	taskID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid ID")
+		return
+	}
+
+	for _, task := range tasks {
+		if task.ID == taskID {
+			w.Header().Set("Content-type", "application/json")
+			json.NewEncoder(w).Encode(task)
+		}
+	}
+}
+
 func getTasks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
 	json.NewEncoder(w).Encode(tasks)
 }
 
@@ -37,6 +76,9 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/", indexRoute)
-	router.HandleFunc("/tasks", getTasks)
+	router.HandleFunc("/tasks", getTasks).Methods("GET")
+	router.HandleFunc("/tasks", createTask).Methods("POST")
+	router.HandleFunc("/task/{id}", getTask).Methods("GET")
+
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
