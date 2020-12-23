@@ -72,6 +72,22 @@ func indexRoute(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to my API")
 }
 
+func deleteTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	taskID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		fmt.Fprintf(w, "Invalid ID")
+		return
+	}
+
+	for i, task := range tasks {
+		if task.ID == taskID {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			fmt.Fprintf(w, "The task with ID %v has been removed succesfully.", taskID)
+		}
+	}
+}
+
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 
@@ -79,6 +95,7 @@ func main() {
 	router.HandleFunc("/tasks", getTasks).Methods("GET")
 	router.HandleFunc("/tasks", createTask).Methods("POST")
 	router.HandleFunc("/task/{id}", getTask).Methods("GET")
+	router.HandleFunc("/task/{id}", deleteTask).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
