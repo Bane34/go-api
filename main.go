@@ -68,6 +68,32 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
+func updateTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	taksID, err := strconv.Atoi(vars["id"])
+	var updatedTask task
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid ID")
+	}
+
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprintf(w, "Please enter valid data")
+	}
+	json.Unmarshal(reqBody, &updatedTask)
+
+	for i, task := range tasks {
+		if task.ID == taksID {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			updatedTask.ID = taksID
+			tasks = append(tasks, updatedTask)
+
+			fmt.Fprintf(w, "The task with ID %v has been updated succesfully", taksID)
+		}
+	}
+}
+
 func indexRoute(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to my API")
 }
@@ -96,6 +122,7 @@ func main() {
 	router.HandleFunc("/tasks", createTask).Methods("POST")
 	router.HandleFunc("/task/{id}", getTask).Methods("GET")
 	router.HandleFunc("/task/{id}", deleteTask).Methods("DELETE")
+	router.HandleFunc("/task/{id}", updateTask).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
