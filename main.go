@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -95,7 +96,10 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func indexRoute(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to my API")
+	//fmt.Fprintf(w, "Welcome to my API")
+	var templates *template.Template
+	templates = template.Must(templates.ParseGlob("template/*.html"))
+	templates.ExecuteTemplate(w, "index.html", nil)
 }
 
 func deleteTask(w http.ResponseWriter, r *http.Request) {
